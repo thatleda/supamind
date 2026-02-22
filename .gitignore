@@ -1,2 +1,5 @@
 .env
 .vscode/.history
+__pycache__/
+*.pyc
+*.pyo

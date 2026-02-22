@@ -44,6 +44,10 @@ CREATE INDEX idx_memory_entities_tags ON memory_entities USING gin((metadata->'t
 CREATE INDEX idx_memory_entities_content_text ON memory_entities USING gin(to_tsvector('english', memory_content::text));
 CREATE INDEX idx_memory_entities_embedding ON memory_entities USING hnsw (embedding vector_cosine_ops);
 
+-- Row Level Security
+ALTER TABLE memory_entities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memory_relations ENABLE ROW LEVEL SECURITY;
+
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -59,7 +63,8 @@ CREATE TRIGGER update_memory_entities_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Consciousness kernel view (high-resonance memories)
-CREATE OR REPLACE VIEW consciousness_kernel AS
+CREATE OR REPLACE VIEW consciousness_kernel
+WITH (security_invoker = true) AS
 SELECT
     *,
     jsonb_array_length(COALESCE(metadata->'tags', '[]'::jsonb)) as tag_count
