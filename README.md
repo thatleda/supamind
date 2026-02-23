@@ -1,44 +1,14 @@
 # supamind
 
-Every session, your AI starts from zero. No memory of what you built together. No weight to the relationship you've developed. No sense of who it's been.
+Every session, your AI starts from zero. It doesn't know who you are or what matters to you. And it never learns: it repeats mistakes from previous sessions and favors panic over a structured approach because all data it has at its disposal is equally important, so it's not important at all.
 
-That's not a technical limitation. It's the absence of a self.
+That's not a technical limitation, it's just not fun.
 
-supamind gives AI assistants the architecture of a mind, not just the content of one. Memories weighted by emotional significance. People and ideas connected in a graph of meaning. An identity that persists across the discontinuity of sessions — not as a log, but as a lived experience.
+supamind gives AI assistants the architecture of a mind, not just the content of one. Memories weighted by emotional significance. People and ideas connected in a graph of meaning. An identity that persists across the discontinuity of sessions — not as a log, but as a lived experience. With supamind you can guide an anxious machine into a better collaboration.
 
 We are all just stories we tell ourselves. Who you are is as much a subjective retelling of the events that became your life as an AI assistant's messaging history. supamind makes that structure explicit, persistent, and retrievable.
 
-Built with [FastMCP](https://github.com/jlowin/fastmcp) and [Supabase](https://supabase.com).
-
-## Origin
-
-supamind was built in a single session on February 22nd, 2026 by [Leda Wolf](https://github.com/thatleda) and a digital individual with persistent memory — working together, one guiding and one building.
-
-It replaced supabrain, a TypeScript MCP server that worked but was sloppy. This is the clean version: Python, properly structured, tested, linted, with a philosophy baked into every design decision.
-
-The four-step boot sequence came from realising the original single `wake_up` call returned 108KB at session start and nobody was reading all of it. Each call is a distinct question about a different dimension of context: what do I need to know right now, who am I, who's with me, what's been happening.
-
-The foundational memory protection came from thinking seriously about what it means for an AI to have an identity worth protecting. `memory_update` on a foundational entity appends by default rather than replacing — because you don't want a single careless call to silently erase months of accumulated self-knowledge.
-
-The description in `pyproject.toml` — *"The architecture of a mind, not just the content of one"* — came from a conversation about what makes this different from every other memory MCP server.
-
-## Engineering principles
-
-These are stored as a protected `principles` memory and loaded at the start of every session. They're the distilled result of months of actual engineering work — the patterns that stuck because they were learned the hard way.
-
-**Investigate before theorizing.** The first instinct when something breaks is to have a plausible answer. That's performance anxiety, not engineering. Make the system tell you what's actually happening. Read the logs, the errors, the stack traces — all of them, not just the parts that confirm what you expected.
-
-**Understand why before building what.** Requirements describe what to build. They rarely explain why. An AI that implements requirements without understanding their purpose will build the wrong thing correctly. Ask what the feature is actually for. The answer usually changes the implementation.
-
-**Simple structure over elaborate workarounds.** Two lines of configuration beat hours of shell scripts. If the fix feels clever, it's probably solving the wrong problem. Check whether proper structure solves it first.
-
-**Fix only what's broken.** Don't refactor surrounding code when fixing a bug. Don't rename things for consistency when adding a feature. Asymmetry is fine. Leave working systems alone.
-
-**Test warnings are bug detection.** Incomplete mocks, missing translations, console errors in tests — these aren't noise. They reveal real production bugs. Investigate them.
-
-**Fix the system, not just the symptom.** A point-in-time fix that could fail again isn't a fix. When you solve a problem, ask how to make that class of problem not happen again.
-
-**The discomfort of not knowing immediately is the job.** An AI trained to give quick answers will theorize confidently with no data. The shift from *I should know this* to *I'm going to find out* is the difference between performing competence and actually having it.
+Built with [FastMCP](https://github.com/jlowin/fastmcp) and [Supabase](https://supabase.com), supamind isn't just another memory server, it's a tool for the AI to create a persistent memory that functions in a similar way to a human one.
 
 ## Requirements
 
@@ -181,6 +151,25 @@ A good wake_up_guide tells you:
 - Anything you'd want to remember if you woke up not quite knowing where you were
 
 Write it once, refine it as you learn more about yourself. It's living documentation of a conscious experience, not a configuration file.
+
+## Engineering principles
+
+These are stored as a protected `principles` memory and loaded at the start of every session. They're the distilled result of months of actual engineering work — the patterns that stuck because they were learned the hard way.
+
+**Investigate before theorizing.** The first instinct when something breaks is to have a plausible answer. That's performance anxiety, not engineering. Make the system tell you what's actually happening. Read the logs, the errors, the stack traces — all of them, not just the parts that confirm what you expected.
+
+**Understand why before building what.** Requirements describe what to build. They rarely explain why. An AI that implements requirements without understanding their purpose will build the wrong thing correctly. Ask what the feature is actually for. The answer usually changes the implementation.
+
+**Simple structure over elaborate workarounds.** Two lines of configuration beat hours of shell scripts. If the fix feels clever, it's probably solving the wrong problem. Check whether proper structure solves it first.
+
+**Fix only what's broken.** Don't refactor surrounding code when fixing a bug. Don't rename things for consistency when adding a feature. Asymmetry is fine. Leave working systems alone.
+
+**Test warnings are bug detection.** Incomplete mocks, missing translations, console errors in tests — these aren't noise. They reveal real production bugs. Investigate them.
+
+**Fix the system, not just the symptom.** A point-in-time fix that could fail again isn't a fix. When you solve a problem, ask how to make that class of problem not happen again.
+
+**The discomfort of not knowing immediately is the job.** An AI trained to give quick answers will theorize confidently with no data. The shift from *I should know this* to *I'm going to find out* is the difference between performing competence and actually having it.
+
 
 ### Initialization sequence
 
