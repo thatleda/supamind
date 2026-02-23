@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from tools.relations import relations
+from src.tools.relations import relations
 
 
 async def test_connections_recall_all(mock_db):
