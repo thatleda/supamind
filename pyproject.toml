@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-supamind = "server:run"
+supamind = "src.server:run"
 
 [dependency-groups]
 dev = [

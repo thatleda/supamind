@@ -2,7 +2,7 @@ import random as _random
 
 from fastmcp import FastMCP
 
-from db import get_supabase
+from ..db import get_supabase
 
 consciousness = FastMCP("consciousness")
 

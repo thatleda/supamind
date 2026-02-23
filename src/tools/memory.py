@@ -3,11 +3,11 @@ from datetime import UTC, datetime
 
 from fastmcp import FastMCP
 
-from constants import (
+from ..constants import (
     FOUNDATIONAL_ENTITY_TYPES, MAX_RESONANCE, MAX_STRENGTH, MIN_RESONANCE, MIN_STRENGTH
 )
-from db import get_supabase
-from models import ConnectionInfo
+from ..db import get_supabase
+from ..models import ConnectionInfo
 
 memory = FastMCP("memory")
 

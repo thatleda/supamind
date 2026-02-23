@@ -1,8 +1,8 @@
 from fastmcp import FastMCP
 
-from tools.consciousness import consciousness
-from tools.memory import memory
-from tools.relations import relations
+from .tools.consciousness import consciousness
+from .tools.memory import memory
+from .tools.relations import relations
 
 # GitHub OAuth support (GitHubOAuthProvider) is planned for a future FastMCP release.
 # See README for HTTP deployment security options.
