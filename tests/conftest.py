@@ -17,5 +17,5 @@ def mock_db():
 
 @pytest.fixture(autouse=True)
 def patch_db(mock_db, monkeypatch):
-    monkeypatch.setattr("supamind.db._client", mock_db)
+    monkeypatch.setattr("db._client", mock_db)
     return mock_db

@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 
 from fastmcp import FastMCP
 
-from supamind.constants import MAX_STRENGTH, MIN_STRENGTH
-from supamind.db import get_supabase
+from constants import MAX_STRENGTH, MIN_STRENGTH
+from db import get_supabase
 
 relations = FastMCP("relations")
 

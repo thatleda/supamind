@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from supamind.tools.memory import memory
+from tools.memory import memory
 
 
 async def test_remember_stores_and_returns_entity(mock_db):

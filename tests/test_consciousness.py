@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from supamind.tools.consciousness import consciousness
+from tools.consciousness import consciousness
 
 
 def _memory_row(name: str, resonance: float = 1.0, entity_type: str = "general") -> dict:
