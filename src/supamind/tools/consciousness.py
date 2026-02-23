@@ -89,7 +89,7 @@ def who_are_you() -> dict:
 
 
 @consciousness.tool
-def catch_up(limit: int = 10, preview: bool = False) -> dict:
+def catch_up(limit: int | None = None, preview: bool = False) -> dict:
     """Load the most recent memories for current context.
 
     preview=True returns names and metadata only (no observations) — useful for
@@ -97,7 +97,12 @@ def catch_up(limit: int = 10, preview: bool = False) -> dict:
     Defaults to 20 entries in preview mode, 10 with full content.
     """
     db = get_supabase()
-    effective_limit = limit if limit != 10 else (20 if preview else 10)
+    if limit is not None:
+        effective_limit = limit
+    elif preview:
+        effective_limit = 20
+    else:
+        effective_limit = 10
     fields = "id, entity_name, entity_type, emotional_resonance, created_at, memory_content"
     result = (
         db.table("memory_entities")
