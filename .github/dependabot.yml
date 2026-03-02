@@ -2,6 +2,8 @@ version: 2
 updates:
   - package-ecosystem: uv
     directory: /
+    assignees:
+      - thatleda
     schedule:
       interval: daily
     groups:
@@ -18,5 +20,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    assignees:
+      - thatleda
     schedule:
       interval: daily
