@@ -87,13 +87,14 @@ RETURNS TABLE(
     emotional_resonance DECIMAL,
     memory_content JSONB,
     metadata JSONB,
+    created_at TIMESTAMPTZ,
     search_rank REAL
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT
         me.id, me.entity_name, me.entity_type, me.emotional_resonance,
-        me.memory_content, me.metadata,
+        me.memory_content, me.metadata, me.created_at,
         ts_rank(to_tsvector('english', me.memory_content::text), plainto_tsquery('english', search_query)) as search_rank
     FROM memory_entities me
     WHERE

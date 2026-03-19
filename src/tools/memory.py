@@ -306,8 +306,8 @@ def memory_search(
                 "entityName": m["entity_name"],
                 "rank": m.get("search_rank", 0),
                 "emotionalResonance": m["emotional_resonance"],
-                "createdAt": m["created_at"],
-                "ageInDays": (now - datetime.fromisoformat(m["created_at"])).days,
+                "createdAt": m.get("created_at"),
+                "ageInDays": (now - datetime.fromisoformat(m["created_at"])).days if m.get("created_at") else 0,
                 "observationsCount": len((m.get("memory_content") or {}).get("observations", [])),
                 "observations": (m.get("memory_content") or {}).get("observations", []),
             }
