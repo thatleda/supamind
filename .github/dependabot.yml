@@ -6,18 +6,7 @@ updates:
       - thatleda
     schedule:
       interval: daily
-    groups:
-      fastmcp:
-        patterns:
-          - fastmcp
-      supabase:
-        patterns:
-          - supabase
-      dev-tools:
-        patterns:
-          - pytest*
-          - pylint
-
+      
   - package-ecosystem: github-actions
     directory: .github/workflows
     assignees:
