@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "The architecture of a mind, not just the content of one"
 requires-python = ">=3.14"
 dependencies = [
-    "fastmcp>=3.2.4",
-    "supabase>=2.29.0",
-    "python-dotenv>=1.0.0",
+    "fastmcp==3.2.4",
+    "supabase==2.29.0",
+    "python-dotenv==1.1.0",
 ]
 
 [project.scripts]
@@ -14,9 +14,9 @@ supamind = "src.server:run"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.24.0",
-    "pylint>=3.0.0",
+    "pytest==8.2.0",
+    "pytest-asyncio==0.24.0",
+    "pylint==3.0.0",
 ]
 
 [tool.pylint.main]
