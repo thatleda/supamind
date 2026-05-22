@@ -97,7 +97,7 @@ BEGIN
         me.memory_content, me.metadata, me.created_at,
         GREATEST(
             ts_rank(to_tsvector('english', me.memory_content::text), plainto_tsquery('english', search_query)),
-            CASE WHEN me.entity_name ILIKE '%' || search_query || '%' THEN 0.5 ELSE 0 END
+            ts_rank(to_tsvector('simple', me.entity_name), to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g')))
         ) as search_rank
     FROM memory_entities me
     WHERE
@@ -106,7 +106,7 @@ BEGIN
         AND (tags IS NULL OR me.metadata->'tags' ?| tags)
         AND (
             to_tsvector('english', me.memory_content::text) @@ plainto_tsquery('english', search_query)
-            OR me.entity_name ILIKE '%' || search_query || '%'
+            OR to_tsvector('simple', me.entity_name) @@ to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g'))
         )
     ORDER BY search_rank DESC, me.emotional_resonance DESC
     LIMIT limit_results;
