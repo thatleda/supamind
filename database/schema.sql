@@ -95,13 +95,19 @@ BEGIN
     SELECT
         me.id, me.entity_name, me.entity_type, me.emotional_resonance,
         me.memory_content, me.metadata, me.created_at,
-        ts_rank(to_tsvector('english', me.memory_content::text), plainto_tsquery('english', search_query)) as search_rank
+        GREATEST(
+            ts_rank(to_tsvector('english', me.memory_content::text), plainto_tsquery('english', search_query)),
+            ts_rank(to_tsvector('simple', me.entity_name), to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g')))
+        ) as search_rank
     FROM memory_entities me
     WHERE
         (min_emotional_resonance IS NULL OR me.emotional_resonance >= min_emotional_resonance)
         AND (entity_types IS NULL OR me.entity_type = ANY(entity_types))
         AND (tags IS NULL OR me.metadata->'tags' ?| tags)
-        AND to_tsvector('english', me.memory_content::text) @@ plainto_tsquery('english', search_query)
+        AND (
+            to_tsvector('english', me.memory_content::text) @@ plainto_tsquery('english', search_query)
+            OR to_tsvector('simple', me.entity_name) @@ to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g'))
+        )
     ORDER BY search_rank DESC, me.emotional_resonance DESC
     LIMIT limit_results;
 END;

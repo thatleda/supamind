@@ -189,9 +189,8 @@ def memory_update(
 ) -> dict:
     """Update existing memory entities.
 
-    Foundational memories (entity_type: self, wake_up_guide, user, principles) protect their
-    observations by default — new observations are appended rather than replaced.
-    Pass force=True to replace observations entirely.
+    New observations are always appended to existing ones by default.
+    Pass force=True to replace all observations entirely.
     """
     db = get_supabase()
     query = db.table("memory_entities").select("*")
@@ -204,7 +203,6 @@ def memory_update(
     if not existing:
         return {"updated": False, "message": f"Memory not found: {entity_name!r}"}
 
-    is_foundational = existing.get("entity_type") in FOUNDATIONAL_ENTITY_TYPES
     warning = None
 
     patch: dict = {"updated_at": datetime.now(UTC).isoformat()}
@@ -212,13 +210,12 @@ def memory_update(
 
     if observations is not None:
         existing_observations = (existing.get("memory_content") or {}).get("observations", [])
-        if is_foundational and not force:
+        if not force:
             merged = existing_observations + observations
             warning = (
-                f"Foundational memory ({existing['entity_type']!r}): "
-                f"{len(observations)} observation(s) appended, not replaced. "
-                f"Pass force=True to replace all "
-                f"{len(existing_observations)} existing observations."
+                f"{len(observations)} observation(s)"
+                f" appended to {len(existing_observations)} existing. "
+                f"Pass force=True to replace all observations entirely."
             )
         else:
             merged = observations
