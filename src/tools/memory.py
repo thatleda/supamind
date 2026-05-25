@@ -213,7 +213,8 @@ def memory_update(
         if not force:
             merged = existing_observations + observations
             warning = (
-                f"{len(observations)} observation(s) appended to {len(existing_observations)} existing. "
+                f"{len(observations)} observation(s)"
+                f" appended to {len(existing_observations)} existing. "
                 f"Pass force=True to replace all observations entirely."
             )
         else:
