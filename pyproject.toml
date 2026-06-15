@@ -16,7 +16,7 @@ supamind = "src.server:run"
 dev = [
     "pytest==9.0.3",
     "pytest-asyncio==1.4.0",
-    "pylint==4.0.5",
+    "pylint==4.0.6",
 ]
 
 [tool.pylint.main]
