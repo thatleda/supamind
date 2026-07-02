@@ -100,7 +100,7 @@ async def test_recall_resonance_buckets(mock_db):
 
 
 async def test_memory_delete_not_found(mock_db):
-    mock_db.execute.return_value = MagicMock(data=None)
+    mock_db.execute.return_value = None
 
     result = await memory.call_tool("memory_delete", {"entity_name": "Nonexistent"})
     content = result.structured_content
@@ -144,7 +144,7 @@ async def test_memory_delete_foundational_with_force(mock_db):
 
 
 async def test_memory_update_not_found(mock_db):
-    mock_db.execute.return_value = MagicMock(data=None)
+    mock_db.execute.return_value = None
 
     result = await memory.call_tool("memory_update", {
         "entity_name": "Nonexistent",

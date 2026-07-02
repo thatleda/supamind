@@ -54,7 +54,7 @@ async def test_connections_recall_for_entity(mock_db):
 
 
 async def test_connections_recall_entity_not_found(mock_db):
-    mock_db.execute.return_value = MagicMock(data=None)
+    mock_db.execute.return_value = None
 
     result = await relations.call_tool("connections_recall", {"entity_name": "Ghost"})
     assert "error" in result.structured_content
@@ -86,7 +86,7 @@ async def test_connections_remember_creates_relation(mock_db):
 
 
 async def test_connections_remember_raises_when_from_entity_missing(mock_db):
-    mock_db.execute.return_value = MagicMock(data=None)
+    mock_db.execute.return_value = None
 
     with pytest.raises(ToolError, match="From entity not found"):
         await relations.call_tool("connections_remember", {
@@ -99,8 +99,7 @@ async def test_connections_remember_raises_when_from_entity_missing(mock_db):
 
 async def test_connections_remember_raises_when_to_entity_missing(mock_db):
     from_entity = MagicMock(data={"id": "uuid-a", "entity_name": "Entity A"})
-    to_missing = MagicMock(data=None)
-    mock_db.execute.side_effect = [from_entity, to_missing]
+    mock_db.execute.side_effect = [from_entity, None]
 
     with pytest.raises(ToolError, match="To entity not found"):
         await relations.call_tool("connections_remember", {

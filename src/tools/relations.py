@@ -42,14 +42,14 @@ def connections_recall(entity_name: str | None = None) -> dict:
             ],
         }
 
-    entity = (
+    entity_response = (
         db.table("memory_entities")
         .select("id, entity_name")
         .eq("entity_name", entity_name)
         .maybe_single()
         .execute()
-        .data
     )
+    entity = entity_response.data if entity_response else None
     if not entity:
         return {"error": f"Entity not found: {entity_name!r}"}
 
@@ -103,17 +103,19 @@ def connections_remember(
     """Create a new relationship between memory entities"""
     db = get_supabase()
 
-    from_entity = (
+    from_response = (
         db.table("memory_entities").select("id, entity_name")
-        .eq("id", from_entity_id).maybe_single().execute().data
+        .eq("id", from_entity_id).maybe_single().execute()
     )
+    from_entity = from_response.data if from_response else None
     if not from_entity:
         raise ValueError(f"From entity not found: {from_entity_id!r}")
 
-    to_entity = (
+    to_response = (
         db.table("memory_entities").select("id, entity_name")
-        .eq("id", to_entity_id).maybe_single().execute().data
+        .eq("id", to_entity_id).maybe_single().execute()
     )
+    to_entity = to_response.data if to_response else None
     if not to_entity:
         raise ValueError(f"To entity not found: {to_entity_id!r}")
 
