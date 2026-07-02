@@ -1,5 +1,8 @@
 from unittest.mock import MagicMock
 
+import pytest
+from fastmcp.exceptions import ToolError
+
 from src.tools.memory import memory
 
 
@@ -57,6 +60,44 @@ async def test_remember_clamps_resonance_above_maximum(mock_db):
 
     inserted_row = mock_db.insert.call_args[0][0]
     assert inserted_row["emotional_resonance"] == 1.0
+
+
+async def test_remember_with_relation_does_not_insert_when_target_missing(mock_db):
+    mock_db.execute.return_value = None
+
+    with pytest.raises(ToolError, match="Target entity not found"):
+        await memory.call_tool("remember_with_relation", {
+            "entity_name": "New Memory",
+            "observations": ["obs"],
+            "connect_to": {
+                "entity_name": "Ghost",
+                "relation_type": "relates_to",
+                "description": "irrelevant",
+            },
+        })
+
+    mock_db.insert.assert_not_called()
+
+
+async def test_remember_with_relation_creates_and_connects(mock_db):
+    target_response = MagicMock(data={"id": "uuid-target", "entity_name": "Existing Entity"})
+    insert_response = MagicMock(data=[{"id": "uuid-new"}])
+    relation_response = MagicMock(data=[{"id": "rel-1"}])
+    mock_db.execute.side_effect = [target_response, insert_response, relation_response]
+
+    result = await memory.call_tool("remember_with_relation", {
+        "entity_name": "New Memory",
+        "observations": ["obs"],
+        "connect_to": {
+            "entity_name": "Existing Entity",
+            "relation_type": "relates_to",
+            "description": "irrelevant",
+        },
+    })
+    content = result.structured_content
+
+    assert content["entityId"] == "uuid-new"
+    assert content["connectedTo"] == "Existing Entity"
 
 
 async def test_recall_by_entity_name(mock_db):

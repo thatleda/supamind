@@ -125,6 +125,18 @@ def remember_with_relation(
 ) -> dict:
     """Store new memories and connect them to existing entities"""
     db = get_supabase()
+
+    target_response = (
+        db.table("memory_entities")
+        .select("id, entity_name")
+        .eq("entity_name", connect_to.entity_name)
+        .maybe_single()
+        .execute()
+    )
+    target = target_response.data if target_response else None
+    if not target:
+        raise ValueError(f"Target entity not found: {connect_to.entity_name!r}")
+
     resonance = _clamp(emotional_resonance, MIN_RESONANCE, MAX_RESONANCE)
     row = {
         "entity_name": entity_name,
@@ -145,17 +157,6 @@ def remember_with_relation(
         raise ValueError("Failed to create entity")
 
     new_id = new_entity.data[0]["id"]
-
-    target_response = (
-        db.table("memory_entities")
-        .select("id, entity_name")
-        .eq("entity_name", connect_to.entity_name)
-        .maybe_single()
-        .execute()
-    )
-    target = target_response.data if target_response else None
-    if not target:
-        raise ValueError(f"Target entity not found: {connect_to.entity_name!r}")
 
     relation = {
         "from_entity_id": target["id"],
