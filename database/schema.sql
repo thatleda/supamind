@@ -90,14 +90,23 @@ RETURNS TABLE(
     created_at TIMESTAMPTZ,
     search_rank REAL
 ) AS $$
+DECLARE
+    content_query tsquery;
+    name_query tsquery;
 BEGIN
+    -- Reuse plainto_tsquery's safe parsing/stemming/stopword handling, then
+    -- swap its AND (&) operator for OR (|) so any matching token counts,
+    -- not just documents matching every token.
+    content_query := to_tsquery('english', replace(plainto_tsquery('english', search_query)::text, ' & ', ' | '));
+    name_query := to_tsquery('simple', replace(plainto_tsquery('simple', search_query)::text, ' & ', ' | '));
+
     RETURN QUERY
     SELECT
         me.id, me.entity_name, me.entity_type, me.emotional_resonance,
         me.memory_content, me.metadata, me.created_at,
         GREATEST(
-            ts_rank(to_tsvector('english', me.memory_content::text), plainto_tsquery('english', search_query)),
-            ts_rank(to_tsvector('simple', me.entity_name), to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g')))
+            ts_rank(to_tsvector('english', me.memory_content::text), content_query),
+            ts_rank(to_tsvector('simple', me.entity_name), name_query)
         ) as search_rank
     FROM memory_entities me
     WHERE
@@ -105,8 +114,8 @@ BEGIN
         AND (entity_types IS NULL OR me.entity_type = ANY(entity_types))
         AND (tags IS NULL OR me.metadata->'tags' ?| tags)
         AND (
-            to_tsvector('english', me.memory_content::text) @@ plainto_tsquery('english', search_query)
-            OR to_tsvector('simple', me.entity_name) @@ to_tsquery('simple', regexp_replace(trim(search_query), '\s+', ' | ', 'g'))
+            to_tsvector('english', me.memory_content::text) @@ content_query
+            OR to_tsvector('simple', me.entity_name) @@ name_query
         )
     ORDER BY search_rank DESC, me.emotional_resonance DESC
     LIMIT limit_results;

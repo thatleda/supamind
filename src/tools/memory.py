@@ -281,10 +281,15 @@ def memory_delete(entity_name: str, force: bool = False) -> dict:
 @memory.tool
 def memory_search(
     query: str,
-    method: str = "semantic",
     limit: int = 10,
 ) -> dict:
-    """Search through memories using various methods"""
+    """Search through memories using full-text search.
+
+    Matches any word in the query (OR semantics), ranked by how many words
+    match. Use a few essential keywords rather than a long descriptive
+    sentence — extra words only add more ways to match, they don't narrow
+    the result set.
+    """
     db = get_supabase()
     result = db.rpc(
         "search_memory_content",
@@ -295,7 +300,7 @@ def memory_search(
     now = datetime.now(UTC)
 
     return {
-        "method": method,
+        "method": "full_text",
         "resultsCount": len(memories),
         "query": query,
         "memories": [
