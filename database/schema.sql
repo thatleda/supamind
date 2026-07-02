@@ -3,8 +3,6 @@
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- Tables
 DROP TABLE IF EXISTS memory_relations CASCADE;
@@ -18,7 +16,6 @@ CREATE TABLE memory_entities (
     emotional_resonance DECIMAL(4,3) DEFAULT 0.5,
     memory_content JSONB DEFAULT '{}',
     metadata JSONB DEFAULT '{"tags": [], "relationships": [], "context": {}}',
-    embedding vector(384),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -42,7 +39,6 @@ CREATE INDEX idx_memory_entities_entity_name ON memory_entities USING gin(entity
 CREATE INDEX idx_memory_entities_content ON memory_entities USING gin(memory_content);
 CREATE INDEX idx_memory_entities_tags ON memory_entities USING gin((metadata->'tags'));
 CREATE INDEX idx_memory_entities_content_text ON memory_entities USING gin(to_tsvector('english', memory_content::text));
-CREATE INDEX idx_memory_entities_embedding ON memory_entities USING hnsw (embedding vector_cosine_ops);
 
 -- Row Level Security
 ALTER TABLE memory_entities ENABLE ROW LEVEL SECURITY;
@@ -121,59 +117,6 @@ BEGIN
     LIMIT limit_results;
 END;
 $$ LANGUAGE plpgsql;
-
--- Vector similarity search
-CREATE OR REPLACE FUNCTION match_consciousness_memories(
-    query_embedding vector,
-    match_threshold double precision DEFAULT 0.78,
-    match_count integer DEFAULT 10
-)
-RETURNS TABLE(
-    id uuid,
-    entity_name text,
-    memory_content jsonb,
-    emotional_resonance double precision,
-    entity_type text,
-    created_at timestamp with time zone,
-    similarity double precision
-)
-LANGUAGE sql STABLE AS $$
-    SELECT
-        memory_entities.id, memory_entities.entity_name, memory_entities.memory_content,
-        memory_entities.emotional_resonance, memory_entities.entity_type, memory_entities.created_at,
-        1 - (memory_entities.embedding <=> query_embedding) as similarity
-    FROM memory_entities
-    WHERE memory_entities.embedding IS NOT NULL
-        AND 1 - (memory_entities.embedding <=> query_embedding) > match_threshold
-    ORDER BY memory_entities.embedding <=> query_embedding
-    LIMIT match_count;
-$$;
-
--- Embedding trigger (calls the generate-embedding edge function on insert)
--- Replace YOUR_PROJECT_URL and YOUR_SERVICE_ROLE_KEY with your project values
-CREATE OR REPLACE FUNCTION trigger_embedding_generation()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-    IF NEW.embedding IS NULL THEN
-        PERFORM net.http_post(
-            url := 'YOUR_PROJECT_URL/functions/v1/generate-embedding',
-            body := json_build_object('memory_id', NEW.id)::jsonb,
-            params := '{}'::jsonb,
-            headers := jsonb_build_object(
-                'Content-Type', 'application/json',
-                'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-                'apikey', 'YOUR_SERVICE_ROLE_KEY'
-            ),
-            timeout_milliseconds := 30000
-        );
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER memory_embedding_trigger
-    AFTER INSERT ON memory_entities
-    FOR EACH ROW EXECUTE FUNCTION trigger_embedding_generation();
 
 -- Emotional decay: entity-type based rates with protective floors
 -- Run periodically (e.g. via pg_cron daily) to let unused memories naturally fade
