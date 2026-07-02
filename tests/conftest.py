@@ -9,7 +9,7 @@ def mock_db():
     mock = MagicMock()
     for method in [
         "table", "select", "insert", "update", "delete", "rpc",
-        "eq", "neq", "or_", "in_", "gte", "lte", "order", "limit", "single",
+        "eq", "neq", "or_", "in_", "gte", "lte", "order", "limit", "single", "maybe_single",
     ]:
         getattr(mock, method).return_value = mock
     return mock

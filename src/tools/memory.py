@@ -150,7 +150,7 @@ def remember_with_relation(
         db.table("memory_entities")
         .select("id, entity_name")
         .eq("entity_name", connect_to.entity_name)
-        .single()
+        .maybe_single()
         .execute()
         .data
     )
@@ -198,7 +198,7 @@ def memory_update(
         query = query.eq("id", entity_name)
     else:
         query = query.eq("entity_name", entity_name)
-    existing = query.single().execute().data
+    existing = query.maybe_single().execute().data
 
     if not existing:
         return {"updated": False, "message": f"Memory not found: {entity_name!r}"}
@@ -260,7 +260,7 @@ def memory_delete(entity_name: str, force: bool = False) -> dict:
     db = get_supabase()
     existing = (
         db.table("memory_entities").select("id, entity_type")
-        .eq("entity_name", entity_name).single().execute().data
+        .eq("entity_name", entity_name).maybe_single().execute().data
     )
     if not existing:
         return {"deleted": False, "message": f"Memory not found: {entity_name!r}"}

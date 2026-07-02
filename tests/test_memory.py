@@ -143,6 +143,18 @@ async def test_memory_delete_foundational_with_force(mock_db):
     assert content["deleted"] is True
 
 
+async def test_memory_update_not_found(mock_db):
+    mock_db.execute.return_value = MagicMock(data=None)
+
+    result = await memory.call_tool("memory_update", {
+        "entity_name": "Nonexistent",
+        "observations": ["obs"],
+    })
+    content = result.structured_content
+
+    assert content["updated"] is False
+
+
 async def test_memory_update_only_patches_specified_fields(mock_db):
     existing = {
         "id": "abc-123",

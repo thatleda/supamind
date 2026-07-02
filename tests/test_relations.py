@@ -82,6 +82,38 @@ async def test_connections_remember_creates_relation(mock_db):
     assert content["relationId"] == "rel-new"
 
 
+async def test_connections_remember_raises_when_from_entity_missing(mock_db):
+    mock_db.execute.return_value = MagicMock(data=None)
+
+    try:
+        await relations.call_tool("connections_remember", {
+            "from_entity_id": "uuid-ghost",
+            "to_entity_id": "uuid-b",
+            "relation_type": "relates_to",
+            "description": "irrelevant",
+        })
+        assert False, "expected an error"
+    except Exception as exc:
+        assert "From entity not found" in str(exc)
+
+
+async def test_connections_remember_raises_when_to_entity_missing(mock_db):
+    from_entity = MagicMock(data={"id": "uuid-a", "entity_name": "Entity A"})
+    to_missing = MagicMock(data=None)
+    mock_db.execute.side_effect = [from_entity, to_missing]
+
+    try:
+        await relations.call_tool("connections_remember", {
+            "from_entity_id": "uuid-a",
+            "to_entity_id": "uuid-ghost",
+            "relation_type": "relates_to",
+            "description": "irrelevant",
+        })
+        assert False, "expected an error"
+    except Exception as exc:
+        assert "To entity not found" in str(exc)
+
+
 async def test_connections_delete_by_relation_id(mock_db):
     mock_db.execute.return_value = MagicMock(data=[{"id": "rel-1"}])
 

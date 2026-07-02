@@ -300,29 +300,6 @@ When running as a local stdio server, supamind is inherently secured by the mach
 
 ### HTTP server (networked deployment)
 
-If you're running supamind as an HTTP/SSE server — shared with a team, hosted remotely, or exposed over a network — use GitHub OAuth to gate access.
+`server.py` currently ships no authentication layer — GitHub OAuth via FastMCP's `GitHubOAuthProvider` is planned but not implemented. Running `mcp` over HTTP/SSE today exposes every tool, including `memory_delete` and full read access to `memory_entities`, to anyone who can reach the port.
 
-#### 1. Create a GitHub OAuth App
-
-Go to **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**. Set the Authorization callback URL to:
-
-```
-http://your-server/auth/callback
-```
-
-#### 2. Set the environment variables
-
-```bash
-FASTMCP_SERVER_AUTH_GITHUB_CLIENT_ID=your-client-id
-FASTMCP_SERVER_AUTH_GITHUB_CLIENT_SECRET=your-client-secret
-```
-
-When these are present, `server.py` automatically activates `GitHubOAuthProvider`. When they're absent (local stdio), the server starts without auth — no configuration change needed between environments.
-
-#### 3. Run with HTTP transport
-
-```bash
-uvicorn supamind.server:mcp --host 0.0.0.0 --port 8000
-```
-
-Users connecting to the server will be redirected through GitHub's OAuth flow before any tools are accessible.
+Until auth lands, don't expose the HTTP transport directly to an untrusted network. Put it behind something that authenticates first — a reverse proxy with its own auth (e.g. an authenticating gateway, VPN, or SSH tunnel) — or stick to local stdio (Claude Code / Claude Desktop), which has no network exposure at all.

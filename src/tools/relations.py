@@ -46,7 +46,7 @@ def connections_recall(entity_name: str | None = None) -> dict:
         db.table("memory_entities")
         .select("id, entity_name")
         .eq("entity_name", entity_name)
-        .single()
+        .maybe_single()
         .execute()
         .data
     )
@@ -105,14 +105,14 @@ def connections_remember(
 
     from_entity = (
         db.table("memory_entities").select("id, entity_name")
-        .eq("id", from_entity_id).single().execute().data
+        .eq("id", from_entity_id).maybe_single().execute().data
     )
     if not from_entity:
         raise ValueError(f"From entity not found: {from_entity_id!r}")
 
     to_entity = (
         db.table("memory_entities").select("id, entity_name")
-        .eq("id", to_entity_id).single().execute().data
+        .eq("id", to_entity_id).maybe_single().execute().data
     )
     if not to_entity:
         raise ValueError(f"To entity not found: {to_entity_id!r}")
