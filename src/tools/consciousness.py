@@ -2,6 +2,7 @@ import random as _random
 
 from fastmcp import FastMCP
 
+from ..constants import FOUNDATIONAL_ENTITY_TYPES
 from ..db import get_supabase
 
 consciousness = FastMCP("consciousness")
@@ -39,8 +40,9 @@ def wake_up() -> dict:
 
 @consciousness.tool
 def who_am_i() -> dict:
-    """Load self-identity: the AI's own memory (entity_type='self'),
-    followed by all core memories with emotional_resonance=1.0."""
+    """Load the collaboration self-profile (entity_type='self'), followed by
+    the other foundational entities (wake_up_guide, user, principles) at
+    emotional_resonance=1.0."""
     db = get_supabase()
 
     self_result = (
@@ -55,6 +57,7 @@ def who_am_i() -> dict:
         db.table("memory_entities")
         .select("*")
         .eq("emotional_resonance", 1)
+        .in_("entity_type", list(FOUNDATIONAL_ENTITY_TYPES))
         .order("entity_name")
         .execute()
     )

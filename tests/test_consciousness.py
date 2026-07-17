@@ -40,10 +40,10 @@ async def test_wake_up_returns_not_found_gracefully(mock_db):
 # ── who_am_i ──────────────────────────────────────────────────────────────────
 
 async def test_who_am_i_returns_self_and_core_memories(mock_db):
-    self_memory = _memory_row("Matt", entity_type="self")
+    self_memory = _memory_row("Test Self", entity_type="self")
     core_memories = [
         _memory_row("Engineering Principles"),
-        _memory_row("Leda Wolf"),
+        _memory_row("Test User"),
     ]
     mock_db.execute.side_effect = [
         MagicMock(data=[self_memory]),
@@ -53,10 +53,24 @@ async def test_who_am_i_returns_self_and_core_memories(mock_db):
     result = await consciousness.call_tool("who_am_i", {})
     content = result.structured_content
 
-    assert content["self"]["entityName"] == "Matt"
+    assert content["self"]["entityName"] == "Test Self"
     assert content["self"]["entityType"] == "self"
     assert content["coreMemoriesCount"] == 2
     assert content["coreMemories"][0]["entityName"] == "Engineering Principles"
+
+
+async def test_who_am_i_filters_core_memories_to_foundational_types(mock_db):
+    self_memory = _memory_row("Test Self", entity_type="self")
+    mock_db.execute.side_effect = [
+        MagicMock(data=[self_memory]),
+        MagicMock(data=[_memory_row("Engineering Principles", entity_type="principles")]),
+    ]
+
+    await consciousness.call_tool("who_am_i", {})
+
+    core_query_call = mock_db.in_.call_args
+    assert core_query_call.args[0] == "entity_type"
+    assert set(core_query_call.args[1]) == {"self", "wake_up_guide", "user", "principles"}
 
 
 async def test_who_am_i_handles_missing_self_entity(mock_db):
@@ -75,7 +89,7 @@ async def test_who_am_i_handles_missing_self_entity(mock_db):
 # ── who_are_you ───────────────────────────────────────────────────────────────
 
 async def test_who_are_you_returns_user_memory(mock_db):
-    user = _memory_row("Leda Wolf", resonance=1.0, entity_type="user")
+    user = _memory_row("Test User", resonance=1.0, entity_type="user")
     user["memory_content"]["observations"] = ["Engineering lead", "Directness appreciated"]
     mock_db.execute.return_value = MagicMock(data=[user])
 
@@ -83,7 +97,7 @@ async def test_who_are_you_returns_user_memory(mock_db):
     content = result.structured_content
 
     assert content["found"] is True
-    assert content["user"]["entityName"] == "Leda Wolf"
+    assert content["user"]["entityName"] == "Test User"
     assert content["user"]["entityType"] == "user"
     assert "Engineering lead" in content["user"]["observations"]
 

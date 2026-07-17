@@ -164,7 +164,7 @@ async def test_memory_delete_success(mock_db):
 async def test_memory_delete_blocks_foundational_without_force(mock_db):
     mock_db.execute.return_value = MagicMock(data={"id": "abc-123", "entity_type": "self"})
 
-    result = await memory.call_tool("memory_delete", {"entity_name": "Matt"})
+    result = await memory.call_tool("memory_delete", {"entity_name": "Test Self"})
     content = result.structured_content
 
     assert content["deleted"] is False
@@ -178,7 +178,7 @@ async def test_memory_delete_foundational_with_force(mock_db):
         MagicMock(data=[{"id": "abc-123"}]),
     ]
 
-    result = await memory.call_tool("memory_delete", {"entity_name": "Matt", "force": True})
+    result = await memory.call_tool("memory_delete", {"entity_name": "Test Self", "force": True})
     content = result.structured_content
 
     assert content["deleted"] is True
@@ -223,7 +223,7 @@ async def test_memory_update_only_patches_specified_fields(mock_db):
 async def test_memory_update_appends_observations_on_foundational(mock_db):
     existing = {
         "id": "abc-123",
-        "entity_name": "Matt",
+        "entity_name": "Test Self",
         "emotional_resonance": 1.0,
         "entity_type": "self",
         "memory_content": {"observations": ["original obs"], "content": "original obs"},
@@ -234,7 +234,7 @@ async def test_memory_update_appends_observations_on_foundational(mock_db):
     ]
 
     result = await memory.call_tool("memory_update", {
-        "entity_name": "Matt",
+        "entity_name": "Test Self",
         "observations": ["new obs"],
     })
     content = result.structured_content
@@ -248,7 +248,7 @@ async def test_memory_update_appends_observations_on_foundational(mock_db):
 async def test_memory_update_replaces_foundational_observations_with_force(mock_db):
     existing = {
         "id": "abc-123",
-        "entity_name": "Matt",
+        "entity_name": "Test Self",
         "emotional_resonance": 1.0,
         "entity_type": "self",
         "memory_content": {"observations": ["original obs"], "content": "original obs"},
@@ -259,7 +259,7 @@ async def test_memory_update_replaces_foundational_observations_with_force(mock_
     ]
 
     result = await memory.call_tool("memory_update", {
-        "entity_name": "Matt",
+        "entity_name": "Test Self",
         "observations": ["replacement obs"],
         "force": True,
     })
@@ -272,15 +272,15 @@ async def test_memory_update_replaces_foundational_observations_with_force(mock_
 
 async def test_memories_get_ids_reports_missing(mock_db):
     mock_db.execute.return_value = MagicMock(data=[
-        {"entity_name": "Leda Wolf", "id": "uuid-leda"},
+        {"entity_name": "Test User", "id": "uuid-user"},
     ])
 
     result = await memory.call_tool("memories_get_ids", {
-        "entity_names": ["Leda Wolf", "Missing Entity"],
+        "entity_names": ["Test User", "Missing Entity"],
     })
     content = result.structured_content
 
-    assert content["found"]["Leda Wolf"] == "uuid-leda"
+    assert content["found"]["Test User"] == "uuid-user"
     assert "Missing Entity" in content["missing"]
     assert content["totalFound"] == 1
     assert content["totalRequested"] == 2

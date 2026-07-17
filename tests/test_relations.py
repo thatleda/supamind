@@ -12,8 +12,8 @@ async def test_connections_recall_all(mock_db):
             "id": "rel-1",
             "relation_type": "influenced_by",
             "strength": 0.9,
-            "from_entity": {"entity_name": "Matt"},
-            "to_entity": {"entity_name": "Leda Wolf"},
+            "from_entity": {"entity_name": "Test Self"},
+            "to_entity": {"entity_name": "Test User"},
         }
     ])
 
@@ -21,13 +21,13 @@ async def test_connections_recall_all(mock_db):
     content = result.structured_content
 
     assert content["totalConnections"] == 1
-    assert content["connections"][0]["from"] == "Matt"
-    assert content["connections"][0]["to"] == "Leda Wolf"
+    assert content["connections"][0]["from"] == "Test Self"
+    assert content["connections"][0]["to"] == "Test User"
     assert content["connections"][0]["relationType"] == "influenced_by"
 
 
 async def test_connections_recall_for_entity(mock_db):
-    entity_response = MagicMock(data={"id": "uuid-matt", "entity_name": "Matt"})
+    entity_response = MagicMock(data={"id": "uuid-self", "entity_name": "Test Self"})
     relations_response = MagicMock(data=[
         {
             "id": "rel-1",
@@ -35,21 +35,21 @@ async def test_connections_recall_for_entity(mock_db):
             "description": "Engineering guidance",
             "strength": 0.95,
             "metadata": {"tags": ["core"]},
-            "from_entity": {"entity_name": "Matt"},
-            "to_entity": {"entity_name": "Leda Wolf"},
+            "from_entity": {"entity_name": "Test Self"},
+            "to_entity": {"entity_name": "Test User"},
         }
     ])
 
     mock_db.execute.side_effect = [entity_response, relations_response]
 
-    result = await relations.call_tool("connections_recall", {"entity_name": "Matt"})
+    result = await relations.call_tool("connections_recall", {"entity_name": "Test Self"})
     content = result.structured_content
 
-    assert content["entityName"] == "Matt"
+    assert content["entityName"] == "Test Self"
     assert content["totalConnections"] == 1
     conn = content["connections"][0]
     assert conn["direction"] == "outgoing"
-    assert conn["connectedEntity"] == "Leda Wolf"
+    assert conn["connectedEntity"] == "Test User"
     assert conn["tags"] == ["core"]
 
 
