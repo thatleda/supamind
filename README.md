@@ -300,6 +300,49 @@ When running as a local stdio server, supamind is inherently secured by the mach
 
 ### HTTP server (networked deployment)
 
-`server.py` currently ships no authentication layer — GitHub OAuth via FastMCP's `GitHubOAuthProvider` is planned but not implemented. Running `mcp` over HTTP/SSE today exposes every tool, including `memory_delete` and full read access to `memory_entities`, to anyone who can reach the port.
+When `GITHUB_CLIENT_ID` is set, `server.py` switches from stdio to HTTP transport and gates every tool behind GitHub OAuth (`src/auth.py`), restricted to a single allowed GitHub login (`GITHUB_ALLOWED_LOGIN`) — a valid GitHub account isn't enough on its own, it must be *that* account. Without `GITHUB_CLIENT_ID` set, the server runs as unauthenticated local stdio, unchanged.
 
-Until auth lands, don't expose the HTTP transport directly to an untrusted network. Put it behind something that authenticates first — a reverse proxy with its own auth (e.g. an authenticating gateway, VPN, or SSH tunnel) — or stick to local stdio (Claude Code / Claude Desktop), which has no network exposure at all.
+The service_role Supabase key stays a server-side secret either way — it's never sent to the client. It authenticates the server to Supabase; GitHub OAuth authenticates the human to the server. Two separate credentials, both ultimately rooted in the same GitHub identity.
+
+## Deploying to Render as a claude.ai custom connector
+
+This lets you reach supamind from any claude.ai client — including the phone app — not just a local stdio session.
+
+### 1. Create a GitHub OAuth App
+
+Go to **GitHub Settings → Developer settings → OAuth Apps → New OAuth App**.
+
+- **Homepage URL**: your Render service URL (see step 2)
+- **Authorization callback URL**: `https://your-supamind-service.onrender.com/auth/callback`
+
+Save the **Client ID** and generate a **Client Secret**.
+
+### 2. Deploy to Render
+
+This repo includes `render.yaml`. In the Render dashboard, create a new **Blueprint** pointing at this repo, or create a **Web Service** manually with:
+
+- Runtime: Python
+- Build command: `pip install uv && uv sync --frozen`
+- Start command: `uv run supamind`
+
+Set these environment variables on the service:
+
+| Variable | Value |
+|---|---|
+| `SUPABASE_URL` | your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | your Supabase service role key |
+| `GITHUB_CLIENT_ID` | from step 1 |
+| `GITHUB_CLIENT_SECRET` | from step 1 |
+| `GITHUB_ALLOWED_LOGIN` | your GitHub username — the only account allowed in |
+| `SUPAMIND_BASE_URL` | `https://your-supamind-service.onrender.com` (the URL Render assigns you) |
+
+Render sets `PORT` automatically; the server reads it.
+
+### 3. Add the connector in claude.ai
+
+Go to **Settings → Connectors → Add custom connector**:
+
+- **URL**: `https://your-supamind-service.onrender.com/mcp`
+- **Advanced settings → OAuth Client ID / Secret**: the same GitHub OAuth App credentials from step 1 (GitHub doesn't support Dynamic Client Registration, so these are entered manually rather than auto-discovered)
+
+Click **Connect** and authorize with the allowed GitHub account. Every claude.ai client signed into your account — desktop, web, phone — can now reach supamind.

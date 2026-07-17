@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: supamind
+    runtime: python
+    plan: starter
+    buildCommand: pip install uv && uv sync --frozen
+    startCommand: uv run supamind
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_ALLOWED_LOGIN
+        sync: false
+      - key: SUPAMIND_BASE_URL
+        sync: false
