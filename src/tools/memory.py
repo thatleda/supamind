@@ -24,6 +24,18 @@ def _is_uuid(value: str) -> bool:
         return False
 
 
+def _snapshot(db, existing: dict, label: str | None = None) -> None:
+    db.table("memory_entity_versions").insert({
+        "entity_id": existing["id"],
+        "entity_name": existing["entity_name"],
+        "entity_type": existing["entity_type"],
+        "emotional_resonance": existing["emotional_resonance"],
+        "memory_content": existing.get("memory_content", {}),
+        "metadata": existing.get("metadata", {}),
+        "label": label,
+    }).execute()
+
+
 @memory.tool
 def recall(
     entity_id: str | None = None,
@@ -205,6 +217,8 @@ def memory_update(
     if not existing:
         return {"updated": False, "message": f"Memory not found: {entity_name!r}"}
 
+    _snapshot(db, existing, label="pre-update")
+
     warning = None
 
     patch: dict = {"updated_at": datetime.now(UTC).isoformat()}
@@ -261,7 +275,7 @@ def memory_delete(entity_name: str, force: bool = False) -> dict:
     """
     db = get_supabase()
     existing_response = (
-        db.table("memory_entities").select("id, entity_type")
+        db.table("memory_entities").select("*")
         .eq("entity_name", entity_name).maybe_single().execute()
     )
     existing = existing_response.data if existing_response else None
@@ -277,8 +291,100 @@ def memory_delete(entity_name: str, force: bool = False) -> dict:
             ),
         }
 
+    _snapshot(db, existing, label="pre-delete")
     db.table("memory_entities").delete().eq("id", existing["id"]).execute()
     return {"deleted": True, "message": f"Deleted {entity_name!r}"}
+
+
+@memory.tool
+def memory_versions(entity_name: str, limit: int = 10) -> dict:
+    """List saved versions of an entity, newest first.
+
+    A version is auto-saved every time memory_update or memory_delete
+    touches an existing entity, so you can always get back to an earlier
+    state with memory_restore.
+    """
+    db = get_supabase()
+    entity_response = (
+        db.table("memory_entities").select("id")
+        .eq("entity_name", entity_name).maybe_single().execute()
+    )
+    entity = entity_response.data if entity_response else None
+    if not entity:
+        return {"found": False, "message": f"Memory not found: {entity_name!r}"}
+
+    rows = (
+        db.table("memory_entity_versions")
+        .select(
+            "id, entity_name, entity_type, emotional_resonance, "
+            "label, created_at, memory_content"
+        )
+        .eq("entity_id", entity["id"])
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+        .data or []
+    )
+    return {
+        "entityId": entity["id"],
+        "versionsCount": len(rows),
+        "versions": [
+            {
+                "versionId": r["id"],
+                "label": r["label"],
+                "createdAt": r["created_at"],
+                "emotionalResonance": r["emotional_resonance"],
+                "observationsCount": len((r.get("memory_content") or {}).get("observations", [])),
+            }
+            for r in rows
+        ],
+    }
+
+
+@memory.tool
+def memory_restore(version_id: str) -> dict:
+    """Restore an entity to a previously saved version.
+
+    The entity's current state is snapshotted first, so restoring is
+    itself reversible via memory_versions + memory_restore.
+    """
+    db = get_supabase()
+    version_response = (
+        db.table("memory_entity_versions").select("*")
+        .eq("id", version_id).maybe_single().execute()
+    )
+    version = version_response.data if version_response else None
+    if not version:
+        return {"restored": False, "message": f"Version not found: {version_id!r}"}
+
+    current_response = (
+        db.table("memory_entities").select("*")
+        .eq("id", version["entity_id"]).maybe_single().execute()
+    )
+    current = current_response.data if current_response else None
+    if not current:
+        return {
+            "restored": False,
+            "message": "The entity this version belonged to no longer exists.",
+        }
+
+    _snapshot(db, current, label="pre-restore")
+
+    db.table("memory_entities").update({
+        "entity_name": version["entity_name"],
+        "entity_type": version["entity_type"],
+        "emotional_resonance": version["emotional_resonance"],
+        "memory_content": version["memory_content"],
+        "metadata": version["metadata"],
+        "updated_at": datetime.now(UTC).isoformat(),
+    }).eq("id", current["id"]).execute()
+
+    return {
+        "restored": True,
+        "entityId": current["id"],
+        "entityName": version["entity_name"],
+        "restoredFrom": version["created_at"],
+    }
 
 
 @memory.tool

@@ -151,7 +151,11 @@ async def test_memory_delete_not_found(mock_db):
 
 async def test_memory_delete_success(mock_db):
     mock_db.execute.side_effect = [
-        MagicMock(data={"id": "abc-123", "entity_type": "general"}),
+        MagicMock(data={
+            "id": "abc-123", "entity_type": "general", "entity_name": "Old Memory",
+            "emotional_resonance": 0.4, "memory_content": {}, "metadata": {},
+        }),
+        MagicMock(data=[{"id": "version-1"}]),
         MagicMock(data=[{"id": "abc-123"}]),
     ]
 
@@ -174,7 +178,11 @@ async def test_memory_delete_blocks_foundational_without_force(mock_db):
 
 async def test_memory_delete_foundational_with_force(mock_db):
     mock_db.execute.side_effect = [
-        MagicMock(data={"id": "abc-123", "entity_type": "self"}),
+        MagicMock(data={
+            "id": "abc-123", "entity_type": "self", "entity_name": "Test Self",
+            "emotional_resonance": 1.0, "memory_content": {}, "metadata": {},
+        }),
+        MagicMock(data=[{"id": "version-1"}]),
         MagicMock(data=[{"id": "abc-123"}]),
     ]
 
@@ -206,6 +214,7 @@ async def test_memory_update_only_patches_specified_fields(mock_db):
     }
     mock_db.execute.side_effect = [
         MagicMock(data=existing),
+        MagicMock(data=[{"id": "version-1"}]),
         MagicMock(data=[existing]),
     ]
 
@@ -230,6 +239,7 @@ async def test_memory_update_appends_observations_on_foundational(mock_db):
     }
     mock_db.execute.side_effect = [
         MagicMock(data=existing),
+        MagicMock(data=[{"id": "version-1"}]),
         MagicMock(data=[existing]),
     ]
 
@@ -255,6 +265,7 @@ async def test_memory_update_replaces_foundational_observations_with_force(mock_
     }
     mock_db.execute.side_effect = [
         MagicMock(data=existing),
+        MagicMock(data=[{"id": "version-1"}]),
         MagicMock(data=[existing]),
     ]
 
@@ -268,6 +279,104 @@ async def test_memory_update_replaces_foundational_observations_with_force(mock_
     assert "warning" not in content
     merged = mock_db.update.call_args[0][0]["memory_content"]["observations"]
     assert merged == ["replacement obs"]
+
+
+async def test_memory_update_saves_snapshot_before_patching(mock_db):
+    existing = {
+        "id": "abc-123",
+        "entity_name": "Test Self",
+        "emotional_resonance": 1.0,
+        "entity_type": "self",
+        "memory_content": {"observations": ["original obs"], "content": "original obs"},
+        "metadata": {},
+    }
+    mock_db.execute.side_effect = [
+        MagicMock(data=existing),
+        MagicMock(data=[{"id": "version-1"}]),
+        MagicMock(data=[existing]),
+    ]
+
+    await memory.call_tool("memory_update", {
+        "entity_name": "Test Self",
+        "observations": ["new obs"],
+        "force": True,
+    })
+
+    snapshot_row = mock_db.insert.call_args_list[0][0][0]
+    assert snapshot_row["entity_id"] == "abc-123"
+    assert snapshot_row["memory_content"]["observations"] == ["original obs"]
+    assert snapshot_row["label"] == "pre-update"
+
+
+async def test_memory_versions_lists_saved_snapshots(mock_db):
+    mock_db.execute.side_effect = [
+        MagicMock(data={"id": "abc-123"}),
+        MagicMock(data=[
+            {"id": "version-2", "entity_name": "Test Self", "entity_type": "self",
+             "emotional_resonance": 1.0, "label": "pre-update",
+             "created_at": "2026-01-02T00:00:00+00:00",
+             "memory_content": {"observations": ["a", "b"]}},
+        ]),
+    ]
+
+    result = await memory.call_tool("memory_versions", {"entity_name": "Test Self"})
+    content = result.structured_content
+
+    assert content["versionsCount"] == 1
+    assert content["versions"][0]["versionId"] == "version-2"
+    assert content["versions"][0]["observationsCount"] == 2
+
+
+async def test_memory_versions_not_found(mock_db):
+    mock_db.execute.return_value = None
+
+    result = await memory.call_tool("memory_versions", {"entity_name": "Nonexistent"})
+    content = result.structured_content
+
+    assert content["found"] is False
+
+
+async def test_memory_restore_applies_version_and_snapshots_current(mock_db):
+    version = {
+        "id": "version-1",
+        "entity_id": "abc-123",
+        "entity_name": "Test Self",
+        "entity_type": "self",
+        "emotional_resonance": 1.0,
+        "memory_content": {"observations": ["restored obs"]},
+        "metadata": {},
+        "created_at": "2026-01-01T00:00:00+00:00",
+    }
+    current = {
+        "id": "abc-123",
+        "entity_name": "Test Self",
+        "entity_type": "self",
+        "emotional_resonance": 1.0,
+        "memory_content": {"observations": ["current obs"]},
+        "metadata": {},
+    }
+    mock_db.execute.side_effect = [
+        MagicMock(data=version),
+        MagicMock(data=current),
+        MagicMock(data=[{"id": "version-2"}]),
+        MagicMock(data=[current]),
+    ]
+
+    result = await memory.call_tool("memory_restore", {"version_id": "version-1"})
+    content = result.structured_content
+
+    assert content["restored"] is True
+    update_patch = mock_db.update.call_args[0][0]
+    assert update_patch["memory_content"]["observations"] == ["restored obs"]
+
+
+async def test_memory_restore_version_not_found(mock_db):
+    mock_db.execute.return_value = None
+
+    result = await memory.call_tool("memory_restore", {"version_id": "ghost"})
+    content = result.structured_content
+
+    assert content["restored"] is False
 
 
 async def test_memories_get_ids_reports_missing(mock_db):

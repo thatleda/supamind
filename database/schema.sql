@@ -20,6 +20,18 @@ CREATE TABLE memory_entities (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE memory_entity_versions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_id UUID REFERENCES memory_entities(id) ON DELETE CASCADE,
+    entity_name TEXT,
+    entity_type TEXT,
+    emotional_resonance DECIMAL(4,3),
+    memory_content JSONB,
+    metadata JSONB,
+    label TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE memory_relations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     from_entity_id UUID REFERENCES memory_entities(id) ON DELETE CASCADE,
@@ -32,6 +44,8 @@ CREATE TABLE memory_relations (
 );
 
 -- Indexes
+CREATE INDEX idx_memory_entity_versions_entity_id
+    ON memory_entity_versions(entity_id, created_at DESC);
 CREATE INDEX idx_memory_entities_emotional_resonance ON memory_entities(emotional_resonance DESC);
 CREATE INDEX idx_memory_entities_entity_type ON memory_entities(entity_type);
 CREATE INDEX idx_memory_entities_created_at ON memory_entities(created_at DESC);
@@ -43,6 +57,7 @@ CREATE INDEX idx_memory_entities_content_text ON memory_entities USING gin(to_ts
 -- Row Level Security
 ALTER TABLE memory_entities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memory_relations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memory_entity_versions ENABLE ROW LEVEL SECURITY;
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()

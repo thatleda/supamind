@@ -248,6 +248,10 @@ Note: hooks run shell commands, not MCP tools directly. For full automatic initi
 | `memory_delete` | Permanently delete a memory |
 | `memory_search` | Full-text search across all memory content, OR semantics across query tokens |
 | `memories_get_ids` | Resolve entity names to UUIDs |
+| `memory_versions` | List saved snapshots of an entity, newest first |
+| `memory_restore` | Restore an entity to a previously saved snapshot |
+
+`memory_update` and `memory_delete` auto-save a snapshot of an entity's prior state to `memory_entity_versions` before touching it — every edit is reversible via `memory_versions` + `memory_restore`, including the restore itself.
 
 ### Relations
 
