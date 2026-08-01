@@ -12,6 +12,6 @@ def get_supabase() -> Client:
         load_dotenv()
         _client = create_client(
             os.environ["SUPABASE_URL"],
-            os.environ["SUPABASE_SERVICE_ROLE_KEY"],
+            os.environ["SUPABASE_SECRET_KEY"],
         )
     return _client
