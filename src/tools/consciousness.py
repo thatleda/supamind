@@ -57,7 +57,7 @@ def who_am_i() -> dict:
         db.table("memory_entities")
         .select("*")
         .eq("emotional_resonance", 1)
-        .in_("entity_type", list(FOUNDATIONAL_ENTITY_TYPES))
+        .in_("entity_type", list(FOUNDATIONAL_ENTITY_TYPES - {"self", "wake_up_guide", "user"}))
         .order("entity_name")
         .execute()
     )

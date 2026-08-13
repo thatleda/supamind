@@ -70,7 +70,7 @@ async def test_who_am_i_filters_core_memories_to_foundational_types(mock_db):
 
     core_query_call = mock_db.in_.call_args
     assert core_query_call.args[0] == "entity_type"
-    assert set(core_query_call.args[1]) == {"self", "wake_up_guide", "user", "principles"}
+    assert set(core_query_call.args[1]) == {"principles"}
 
 
 async def test_who_am_i_handles_missing_self_entity(mock_db):
