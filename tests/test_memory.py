@@ -7,12 +7,14 @@ from src.tools.memory import memory
 
 
 async def test_remember_stores_and_returns_entity(mock_db):
-    mock_db.execute.return_value = MagicMock(data=[{
+    no_collision = MagicMock(data=[])
+    insert_response = MagicMock(data=[{
         "id": "abc-123",
         "entity_name": "Test Memory",
         "emotional_resonance": 0.4,
         "created_at": "2026-01-01T00:00:00+00:00",
     }])
+    mock_db.execute.side_effect = [no_collision, insert_response]
 
     result = await memory.call_tool("remember", {
         "entity_name": "Test Memory",
@@ -27,12 +29,14 @@ async def test_remember_stores_and_returns_entity(mock_db):
 
 
 async def test_remember_clamps_resonance_below_minimum(mock_db):
-    mock_db.execute.return_value = MagicMock(data=[{
+    no_collision = MagicMock(data=[])
+    insert_response = MagicMock(data=[{
         "id": "abc-123",
         "entity_name": "Test",
         "emotional_resonance": 0.1,
         "created_at": "2026-01-01T00:00:00+00:00",
     }])
+    mock_db.execute.side_effect = [no_collision, insert_response]
 
     await memory.call_tool("remember", {
         "entity_name": "Test",
@@ -45,12 +49,14 @@ async def test_remember_clamps_resonance_below_minimum(mock_db):
 
 
 async def test_remember_clamps_resonance_above_maximum(mock_db):
-    mock_db.execute.return_value = MagicMock(data=[{
+    no_collision = MagicMock(data=[])
+    insert_response = MagicMock(data=[{
         "id": "abc-123",
         "entity_name": "Test",
         "emotional_resonance": 1.0,
         "created_at": "2026-01-01T00:00:00+00:00",
     }])
+    mock_db.execute.side_effect = [no_collision, insert_response]
 
     await memory.call_tool("remember", {
         "entity_name": "Test",
@@ -63,7 +69,8 @@ async def test_remember_clamps_resonance_above_maximum(mock_db):
 
 
 async def test_remember_with_relation_does_not_insert_when_target_missing(mock_db):
-    mock_db.execute.return_value = None
+    no_collision = MagicMock(data=[])
+    mock_db.execute.side_effect = [no_collision, None]
 
     with pytest.raises(ToolError, match="Target entity not found"):
         await memory.call_tool("remember_with_relation", {
@@ -80,10 +87,11 @@ async def test_remember_with_relation_does_not_insert_when_target_missing(mock_d
 
 
 async def test_remember_with_relation_creates_and_connects(mock_db):
+    no_collision = MagicMock(data=[])
     target_response = MagicMock(data={"id": "uuid-target", "entity_name": "Existing Entity"})
     insert_response = MagicMock(data=[{"id": "uuid-new"}])
     relation_response = MagicMock(data=[{"id": "rel-1"}])
-    mock_db.execute.side_effect = [target_response, insert_response, relation_response]
+    mock_db.execute.side_effect = [no_collision, target_response, insert_response, relation_response]
 
     result = await memory.call_tool("remember_with_relation", {
         "entity_name": "New Memory",
@@ -98,6 +106,80 @@ async def test_remember_with_relation_creates_and_connects(mock_db):
 
     assert content["entityId"] == "uuid-new"
     assert content["connectedTo"] == "Existing Entity"
+
+
+async def test_remember_warns_on_name_collision_without_force(mock_db):
+    collision = MagicMock(data=[{"id": "existing-id"}])
+    mock_db.execute.return_value = collision
+
+    result = await memory.call_tool("remember", {
+        "entity_name": "Matt",
+        "observations": ["obs"],
+    })
+    content = result.structured_content
+
+    assert content["stored"] is False
+    assert "already exists" in content["warning"]
+    mock_db.insert.assert_not_called()
+
+
+async def test_remember_inserts_on_name_collision_with_force(mock_db):
+    collision = MagicMock(data=[{"id": "existing-id"}])
+    insert_response = MagicMock(data=[{
+        "id": "new-id",
+        "entity_name": "Matt",
+        "emotional_resonance": 0.4,
+        "created_at": "2026-01-01T00:00:00+00:00",
+    }])
+    mock_db.execute.side_effect = [collision, insert_response]
+
+    result = await memory.call_tool("remember", {
+        "entity_name": "Matt",
+        "observations": ["obs"],
+        "force": True,
+    })
+    content = result.structured_content
+
+    assert content["stored"] is True
+    assert content["entityId"] == "new-id"
+
+
+async def test_remember_with_relation_warns_on_name_collision_without_force(mock_db):
+    collision = MagicMock(data=[{"id": "existing-id"}])
+    mock_db.execute.return_value = collision
+
+    result = await memory.call_tool("remember_with_relation", {
+        "entity_name": "Matt",
+        "observations": ["obs"],
+        "connect_to": {
+            "entity_name": "Existing Entity",
+            "relation_type": "relates_to",
+            "description": "irrelevant",
+        },
+    })
+    content = result.structured_content
+
+    assert content["stored"] is False
+    assert "already exists" in content["warning"]
+    mock_db.insert.assert_not_called()
+
+
+async def test_memory_update_rename_warns_on_collision_without_force(mock_db):
+    existing = MagicMock(data={"id": "id-1", "entity_name": "Old Name", "entity_type": "general",
+                                "emotional_resonance": 0.4, "memory_content": {}, "metadata": {}})
+    snapshot_response = MagicMock(data=[{"id": "snap"}])
+    collision = MagicMock(data=[{"id": "other-id"}])
+    final_update = MagicMock()
+    mock_db.execute.side_effect = [existing, snapshot_response, collision, final_update]
+
+    result = await memory.call_tool("memory_update", {
+        "entity_name": "Old Name",
+        "new_entity_name": "Matt",
+    })
+    content = result.structured_content
+
+    assert "entity_name" not in content["fieldsModified"]
+    assert "already exists" in content["warning"]
 
 
 async def test_recall_by_entity_name(mock_db):
