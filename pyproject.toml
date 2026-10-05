@@ -6,7 +6,7 @@ requires-python = ">=3.14"
 dependencies = [
     "fastmcp==4.0.10",
     "supabase==2.31.0",
-    "python-dotenv==1.2.3",
+    "python-dotenv==1.2.4",
 ]
 
 [project.scripts]
