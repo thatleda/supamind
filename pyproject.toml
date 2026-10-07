@@ -5,7 +5,7 @@ description = "The architecture of a mind, not just the content of one"
 requires-python = ">=3.14"
 dependencies = [
     "fastmcp==4.0.10",
-    "supabase==2.31.0",
+    "supabase==2.32.0",
     "python-dotenv==1.2.4",
 ]
 
