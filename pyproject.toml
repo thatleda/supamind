@@ -15,7 +15,7 @@ supamind = "src.server:run"
 [dependency-groups]
 dev = [
     "pytest==9.2.0",
-    "pytest-asyncio==1.4.1",
+    "pytest-asyncio==1.4.1.post1",
     "pylint==4.1.3",
 ]
 
